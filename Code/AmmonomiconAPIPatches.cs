@@ -18,22 +18,7 @@ namespace AmmonomiconAPI
 {
     class AmmonomiconAPIPatches
     {
-        /*
-        [HarmonyPatch(typeof(ClassToPatch), nameof(ClassToPatch.MethodToPatch))]
-        [HarmonyPrefix]
-        private static bool ClassToPatchMethodToPatchPatch(ClassToPatch __instance, ArgType1 arg1, ArgType2 arg2, ..., ref ReturnType __result)
-        {
-            if (dontNeedCustomLogic)
-                return true;     // call the original method
 
-            // custom logic
-
-            __result = null; // change the original result
-            return false;    // skip the original method
-                             // OR 
-            return true; // call the original method
-        }
-        */
 
 
         [HarmonyPatch(typeof(AmmonomiconController), nameof(AmmonomiconController.PrecacheAllData))]
@@ -41,73 +26,81 @@ namespace AmmonomiconAPI
         {
             [HarmonyPostfix]
             private static void PrecacheAllData(AmmonomiconController __instance)
-            {
-
-                /*
-                GameObject pageLeft = (GameObject)UnityEngine.Object.Instantiate(BraveResources.Load(__instance.m_AmmonomiconInstance.bookmarks[0].TargetNewPageLeft, ".prefab"));
-
-
-
-                ETGModConsole.Log(__instance.m_AmmonomiconInstance.bookmarks[0].TargetNewPageLeft);
-                ETGModConsole.Log(__instance.m_AmmonomiconInstance.bookmarks[0].TargetNewPageRight);
-
-                var pageLeftRenderer = pageLeft.GetComponentInChildren<AmmonomiconPageRenderer>();
-                ETGModConsole.Log(31);
-
-                var panelMainLeft = pageLeftRenderer.transform.parent.GetComponent<dfGUIManager>().transform.Find("Scroll Panel");
-                ETGModConsole.Log(4);
-
-                StaticData.HeaderObject = FakePrefab.Clone(panelMainLeft.Find("Header").gameObject).GetComponent<dfPanel>();
-                ETGModConsole.Log(5);
-
-                StaticData.LeftPageFooter = FakePrefab.Clone(panelMainLeft.Find("Footer").gameObject).GetComponent<dfPanel>();
-                ETGModConsole.Log(6);
-
-                var scroll2Left = panelMainLeft.Find("Scroll Panel");
-                ETGModConsole.Log(7);
-
-                StaticData.ActiveItemsHeader = FakePrefab.Clone(scroll2Left.Find("Active Items Header").gameObject).GetComponent<dfPanel>();
-                ETGModConsole.Log(8);
-
-                StaticData.GunsItemsHeader = FakePrefab.Clone(scroll2Left.Find("Guns Header").gameObject).GetComponent<dfPanel>();
-                ETGModConsole.Log(9);
-
-                StaticData.ItemsHeader = FakePrefab.Clone(scroll2Left.Find("Passive Items Panel").gameObject).GetComponent<dfPanel>();
-                ETGModConsole.Log(10);
-
-                GameObject pageRight = (GameObject)UnityEngine.Object.Instantiate(BraveResources.Load(__instance.m_AmmonomiconInstance.bookmarks[0].TargetNewPageRight, ".prefab"));
-                ETGModConsole.Log(11);
-
-                var pageRightRenderer = pageRight.GetComponentInChildren<AmmonomiconPageRenderer>();
-                ETGModConsole.Log(12);
-                var panelMainRight = pageRightRenderer.transform.parent.GetComponent<dfGUIManager>().transform.Find("Scroll Panel");
-                ETGModConsole.Log(13);
-
-
-                StaticData.HeaderObjectRightPage = FakePrefab.Clone(panelMainRight.Find("Header").gameObject).GetComponent<dfPanel>();
-                ETGModConsole.Log(14);
-                StaticData.ThePhotoGraph = FakePrefab.Clone(panelMainRight.Find("ThePhoto").gameObject).GetComponent<dfPanel>();
-                ETGModConsole.Log(15);
-                StaticData.RightPageDivider = FakePrefab.Clone(panelMainRight.Find("Divider").gameObject).GetComponent<dfPanel>();
-                ETGModConsole.Log(16);
-                StaticData.RightPageFooter = FakePrefab.Clone(panelMainRight.Find("Footer").gameObject).GetComponent<dfPanel>();
-                ETGModConsole.Log(17);
-                StaticData.RightPageScrollPanel = FakePrefab.Clone(panelMainRight.Find("Scroll Panel").gameObject).GetComponent<dfPanel>();
-
-                ETGModConsole.Log(18);
-                StaticData.TapeLine = FakePrefab.Clone(panelMainRight.Find("Tape Line One").gameObject).GetComponent<dfPanel>();
-                ETGModConsole.Log(19);
-
-                UnityEngine.Object.Destroy(pageLeft.gameObject);
-                UnityEngine.Object.Destroy(pageRight.gameObject);
-                ETGModConsole.Log(20);
-                */
+            {          
                 CustomActions.OnAmmonomiconPrecache?.Invoke(__instance, __instance.m_AmmonomiconInstance);
-
-
             }
         }
 
+        [HarmonyPatch(typeof(AmmonomiconController), nameof(AmmonomiconController.Awake))]
+        public class Patch_Awake_Class
+        {
+            [HarmonyPrefix]
+            private static bool Awake(AmmonomiconController __instance)
+            {
+                var ammo = Enum.GetValues(typeof(AmmonomiconPageRenderer.PageType)).Length;
+                float c = -20 - ammo;
+                int a = (int)ammo + 4;
+                for (int i = 0; i < a; i++)
+                {
+                    __instance.m_offsetInUse.Add(false);
+                    __instance.m_offsets.Add(new Vector3((float)(-200 + (c * i)), (float)(-200 + (c * i)), 0f));
+                }
+                return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(AmmonomiconPageRenderer), nameof(AmmonomiconPageRenderer.InitializeDeathPageRight))]
+        public class Patch_InitializeDeathPageRight_Class
+        {
+            [HarmonyPrefix]
+            private static bool PrecacheAllData(AmmonomiconPageRenderer __instance)
+            {
+                AmmonomiconDeathPageController component = __instance.guiManager.GetComponent<AmmonomiconDeathPageController>();
+                component.DoInitialize();
+                dfScrollPanel component2 = component.transform.Find("Scroll Panel").Find("Footer").Find("ScrollItemsPanel").GetComponent<dfScrollPanel>();
+                dfPanel component3 = component2.transform.Find("AllItemsPanel").GetComponent<dfPanel>();
+                for (int i = 0; i < component3.transform.childCount; i++)
+                {
+                    UnityEngine.Object.Destroy(component3.transform.GetChild(i).gameObject);
+                }
+                List<tk2dBaseSprite> list = new List<tk2dBaseSprite>();
+                for (int j = 0; j < GameManager.Instance.AllPlayers.Length; j++)
+                {
+                    PlayerController playerController = GameManager.Instance.AllPlayers[j];
+                    for (int k = 0; k < playerController.inventory.AllGuns.Count; k++)
+                    {
+                        Gun gun = playerController.inventory.AllGuns[k];
+                        tk2dClippedSprite tk2dClippedSprite = __instance.AddSpriteToPage<tk2dClippedSprite>(gun.GetSprite().Collection, gun.DefaultSpriteID);
+                        SpriteOutlineManager.AddScaledOutlineToSprite<tk2dClippedSprite>(tk2dClippedSprite, Color.black, 0.1f, 0.01f);
+                        tk2dClippedSprite.transform.parent = component3.transform;
+                        tk2dClippedSprite.transform.position = component3.GetCenter();
+                        list.Add(tk2dClippedSprite);
+                    }
+                    for (int l = 0; l < playerController.activeItems.Count; l++)
+                    {
+                        tk2dClippedSprite tk2dClippedSprite2 = __instance.AddSpriteToPage<tk2dClippedSprite>(playerController.activeItems[l].sprite.Collection, playerController.activeItems[l].sprite.spriteId);
+                        SpriteOutlineManager.AddScaledOutlineToSprite<tk2dClippedSprite>(tk2dClippedSprite2, Color.black, 0.1f, 0.01f);
+                        tk2dClippedSprite2.transform.parent = component3.transform;
+                        tk2dClippedSprite2.transform.position = component3.GetCenter();
+                        list.Add(tk2dClippedSprite2);
+                    }
+                    for (int m = 0; m < playerController.passiveItems.Count; m++)
+                    {
+                        tk2dClippedSprite tk2dClippedSprite3 = __instance.AddSpriteToPage<tk2dClippedSprite>(playerController.passiveItems[m].sprite.Collection, playerController.passiveItems[m].sprite.spriteId);
+                        SpriteOutlineManager.AddScaledOutlineToSprite<tk2dClippedSprite>(tk2dClippedSprite3, Color.black, 0.1f, 0.01f);
+                        tk2dClippedSprite3.transform.parent = component3.transform;
+                        tk2dClippedSprite3.transform.position = component3.GetCenter();
+                        list.Add(tk2dClippedSprite3);
+                    }
+                }
+                CustomActions.OnDeathPageFinalizing?.Invoke(__instance, list);
+                list = list.ttOrderBy((tk2dBaseSprite a) => a.GetBounds().size.y);
+                List<tk2dBaseSprite> list2 = new List<tk2dBaseSprite>();
+                __instance.BoxArrangeItems(component3, list, new Vector2(0f, 6f), new Vector2(6f, 3f), ref list2);
+                __instance.StartCoroutine(__instance.HandleDeathItemsClipping(component3, list));
+                return false;
+            }
+        }
 
 
 
@@ -120,13 +113,8 @@ namespace AmmonomiconAPI
                 AmmonomiconPageRenderer ammonomiconPageRenderer;
                 var inst = __instance.m_AmmonomiconInstance.GetComponent<InstancePlusManager>();
                 bool isPrecached = false;
-
-                //Debug.Log("Patch_LoadPageUIAtPath");
-
-
                 if (__instance.m_extantPageMap.ContainsKey(pageType))
                 {
-
                     foreach (var entry in __instance.m_extantPageMap)
                     {
                         if (StaticData.AllCustomEnums.Contains(entry.Key))
@@ -134,9 +122,6 @@ namespace AmmonomiconAPI
                             entry.Value.targetRenderer.enabled = false;
                         }
                     }
-                    //Debug.Log("Respawning ( " + pageType + " )");
-
-                    //ammonomiconPageRenderer.Initialize(component3);
                     ammonomiconPageRenderer = __instance.m_extantPageMap[pageType];
                     if (pageType == AmmonomiconPageRenderer.PageType.DEATH_LEFT || pageType == AmmonomiconPageRenderer.PageType.DEATH_RIGHT)
                     {
@@ -199,61 +184,45 @@ namespace AmmonomiconAPI
                         AmmonomiconDeathPageController component4 = ammonomiconPageRenderer.transform.parent.GetComponent<AmmonomiconDeathPageController>();
                         component4.isVictoryPage = true;
                     }
-                    ammonomiconPageRenderer.Initialize(component3);
-                    ammonomiconPageRenderer.EnableRendering();
-                    __instance.m_extantPageMap.Add(pageType, ammonomiconPageRenderer);
 
 
                     var ammo = Enum.GetValues(typeof(AmmonomiconPageRenderer.PageType)).Length;
                     int a = (int)ammo + 4;
-                    for (int i = __instance.m_offsets.Count-2; i < (int)pageType + a; ++i)
+                    float c = -20 - ammo;
+
+
+
+                    for (int i = __instance.m_offsets.Count - 2; i < (int)a; ++i)
                     {
+
                         if (__instance.m_offsets.Count > i)
                         {
-                            __instance.m_offsetInUse[i] = false;
-                            __instance.m_offsets[i] = new Vector3(-200 + -20 * i, -200 + -20 * i, 0f);
+                            //__instance.m_offsetInUse[i] = false;
+                            __instance.m_offsets[i] = new Vector3(-200 + +(c * i), -200 + (c * i), 0f);
 
                         }
                         else
                         {
                             __instance.m_offsetInUse.Add(false);
-                            __instance.m_offsets.Add(new Vector3(-200 + -20 * i, -200 + -20 * i, 0f));
+                            __instance.m_offsets.Add(new Vector3(-200 + (c * i), -200 + (c * i), 0f));
                         }
                     }
-                    
-                    /*
-                    for (int i = 0; i < __instance.m_offsets.Count(); i++)
-                    {
-                        Debug.Log($"{i}: {__instance.m_offsets[i]}");
-                    }
-                    */
 
-                    int Count = __instance.m_offsets.Count;
-                    if (pageType != AmmonomiconPageRenderer.PageType.DEATH_LEFT)
+                    for (int i = 0; i < __instance.m_offsets.Count; i++)
                     {
-                        __instance.m_offsetInUse[Count - 2] = true;
-                        gameObject.transform.position = __instance.m_offsets[Count - 2];
-                        ammonomiconPageRenderer.offsetIndex = Count - 2;
-                    }
-                    else if (pageType != AmmonomiconPageRenderer.PageType.DEATH_RIGHT)
-                    {
-                        __instance.m_offsetInUse[Count - 1] = true;
-                        gameObject.transform.position = __instance.m_offsets[Count - 1];
-                        ammonomiconPageRenderer.offsetIndex = Count - 1;
-                    }
-                    else
-                    {
-                        for (int i = 0; i < __instance.m_offsets.Count; i++)
+                        if (__instance.m_offsetInUse[i] == false)
                         {
-                            if (__instance.m_offsetInUse[i] == false)
-                            {
-                                __instance.m_offsetInUse[i] = true;
-                                gameObject.transform.position = __instance.m_offsets[i];
-                                ammonomiconPageRenderer.offsetIndex = i;
-                                break;
-                            }
+                            __instance.m_offsetInUse[i] = true;
+                            gameObject.transform.position = __instance.m_offsets[i];
+                            ammonomiconPageRenderer.offsetIndex = i;
+                            break;
                         }
                     }
+                    ammonomiconPageRenderer.Initialize(component3);
+                    ammonomiconPageRenderer.EnableRendering();
+                    __instance.m_extantPageMap.Add(pageType, ammonomiconPageRenderer);
+
+
                     if (isPreCache)
                     {
                         isPrecached = true;

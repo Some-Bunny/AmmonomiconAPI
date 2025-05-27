@@ -72,6 +72,11 @@ namespace AmmonomiconAPI
         /// </summary>
         public static Func<AmmonomiconDeathPageController, bool> OnPreDeathPageBuildRight;
 
+        /// <summary>
+        /// Runs before the Death Right Page finalizes the inventory icons. Add sprites to the list to have them display. 
+        /// </summary>
+        public static Action<AmmonomiconPageRenderer, List<tk2dBaseSprite>> OnDeathPageFinalizing;
+
 
         /// <summary>
         /// Runs before any Page is built. Bool dictates whether the original building code will be ran or not. 
