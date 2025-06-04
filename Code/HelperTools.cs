@@ -5,6 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using MonoMod.Cil;
+using Mono.Cecil.Cil;
+using System.Reflection;
 
 namespace AmmonomiconAPI
 {
@@ -81,6 +84,12 @@ namespace AmmonomiconAPI
             string key = $"#AMMONOMICON_AUTO_DB_STRING_{++_AutoStringCounter}";
             ETGMod.Databases.Strings.Items.AddComplex(key, s);
             return key;
+        }
+
+        /// <summary>Convenience method for calling an internal / private static function with an ILCursor</summary>
+        internal static void CallPrivate(this ILCursor cursor, Type t, string name)
+        {
+            cursor.Emit(OpCodes.Call, t.GetMethod(name, BindingFlags.Static | BindingFlags.NonPublic));
         }
     }
 }
