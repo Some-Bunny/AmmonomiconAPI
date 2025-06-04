@@ -12,6 +12,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Experimental.UIElements;
+using MonoMod.Cil;
+using Mono.Cecil.Cil;
 using static AmmonomiconPageRenderer;
 
 namespace AmmonomiconAPI
@@ -378,45 +380,32 @@ namespace AmmonomiconAPI
         [HarmonyPatch(typeof(AmmonomiconController), nameof(AmmonomiconController.OpenInternal))]
         public class Patch_OpenInternal_Class
         {
-            [HarmonyPrefix]
-            private static bool Patch_OpenInternal(AmmonomiconController __instance, bool isDeath, bool isVictory, EncounterTrackable targetTrackable = null)
+            [HarmonyILManipulator]
+            private static void Patch_OpenInternalIL(ILContext il)
             {
-                __instance.m_isOpening = true;
-                while (dfGUIManager.GetModalControl() != null)
-                {
-                    Debug.LogError(dfGUIManager.GetModalControl().name + " was modal, popping...");
-                    dfGUIManager.PopModal();
-                }
-                __instance.m_isPageTransitioning = true;
-                __instance.m_AmmonomiconInstance.GuiManager.enabled = true;
-                __instance.m_AmmonomiconInstance.GuiManager.RenderCamera.enabled = true;
+                ILCursor cursor = new ILCursor(il);
+                if (!cursor.TryGotoNext(MoveType.Before,
+                    instr => instr.MatchLdfld<AmmonomiconInstanceManager>("bookmarks"),
+                    instr => instr.MatchLdlen(),
+                    instr => instr.MatchConvI4(),
+                    instr => instr.MatchLdcI4(1),
+                    instr => instr.MatchSub()
+                    ))
+                  return;
 
+                cursor.RemoveRange(5);
+                cursor.CallPrivate(typeof(Patch_OpenInternal_Class), nameof(GetActualDeathPageIndex));
+            }
 
-                var elemt = __instance.m_AmmonomiconInstance.bookmarks.Where(na => na.name == "Death").FirstOrDefault();
+            private static int GetActualDeathPageIndex(AmmonomiconInstanceManager aim)
+            {
+                return aim.bookmarks.IndexOf(aim.bookmarks.Where(na => na.name == "Death").FirstOrDefault());
+            }
 
-
-                int num = !isDeath ? 0 : __instance.m_AmmonomiconInstance.bookmarks.IndexOf(elemt);
-
-
-                __instance.m_CurrentLeftPageManager = __instance.LoadPageUIAtPath(__instance.m_AmmonomiconInstance.bookmarks[num].TargetNewPageLeft, (!isDeath) ? AmmonomiconPageRenderer.PageType.EQUIPMENT_LEFT : AmmonomiconPageRenderer.PageType.DEATH_LEFT, false, isVictory);
-                __instance.m_CurrentRightPageManager = __instance.LoadPageUIAtPath(__instance.m_AmmonomiconInstance.bookmarks[num].TargetNewPageRight, (!isDeath) ? AmmonomiconPageRenderer.PageType.EQUIPMENT_RIGHT : AmmonomiconPageRenderer.PageType.DEATH_RIGHT, false, isVictory);
-                __instance.m_CurrentLeftPageManager.ForceUpdateLanguageFonts();
-                __instance.m_CurrentRightPageManager.ForceUpdateLanguageFonts();
-                if (__instance.m_CurrentRightPageManager.pageType == AmmonomiconPageRenderer.PageType.EQUIPMENT_RIGHT && __instance.m_CurrentLeftPageManager.LastFocusTarget != null)
-                {
-                    AmmonomiconPokedexEntry component = (__instance.m_CurrentLeftPageManager.LastFocusTarget as dfButton).GetComponent<AmmonomiconPokedexEntry>();
-                    __instance.m_CurrentRightPageManager.SetRightDataPageTexts(component.ChildSprite, component.linkedEncounterTrackable);
-                }
-                else if (__instance.m_CurrentRightPageManager.pageType == AmmonomiconPageRenderer.PageType.EQUIPMENT_RIGHT)
-                {
-                    __instance.m_CurrentRightPageManager.SetRightDataPageUnknown(false);
-                }
-                __instance.m_CurrentRightPageManager.targetRenderer.sharedMaterial.shader = ShaderCache.Acquire("Custom/AmmonomiconPageShader");
-                __instance.StartCoroutine(__instance.HandleOpenAmmonomicon(isDeath, GameManager.Options.HasEverSeenAmmonomicon, targetTrackable));
-                GameManager.Options.HasEverSeenAmmonomicon = true;
+            [HarmonyPostfix]
+            private static void Patch_OpenInternal(AmmonomiconController __instance, bool isDeath, bool isVictory, EncounterTrackable targetTrackable)
+            {
                 CustomActions.OnAmmonomiconStartOpened?.DynamicInvoke(__instance, isDeath, isVictory, targetTrackable);
-
-                return false;
             }
         }
         [HarmonyPatch(typeof(AmmonomiconPageRenderer), nameof(AmmonomiconPageRenderer.ToggleHeaderImage))]
