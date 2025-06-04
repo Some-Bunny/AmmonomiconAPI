@@ -21,7 +21,7 @@ namespace AmmonomiconAPI
     {
         public const string GUID = "bobot_and_bunny.etg.ammonomiconapi";
         public const string NAME = "[[ AmmonomiconAPI ]]";
-        public const string VERSION = "1.0.1";
+        public const string VERSION = "1.0.2";
         public const string TEXT_COLOR = "#FF0000";
 
         public void Start()

@@ -55,6 +55,42 @@ namespace AmmonomiconAPI
             encounterDatabaseEntry.journalData = journalEntry;
             encounterDatabaseEntry.path = string.Empty;
             encounterDatabaseEntry.myGuid = EncounterGUID;
+            
+            if (autoEncounter)
+            {
+                GameStatsManager.Instance.HandleEncounteredObjectRaw(EncounterGUID);
+            }
+            return encounterDatabaseEntry;
+        }
+
+        public static EncounterDatabaseEntry CreateDummyEncounterDatabaseEntry(string OverrideShootStyleString, JournalEntry journalEntry, string EncounterGUID = null, bool autoEncounter = true)
+        {
+            EncounterGUID = EncounterGUID ?? Guid.NewGuid().ToString();
+            EncounterDatabaseEntry encounterDatabaseEntry = new EncounterDatabaseEntry();
+            encounterDatabaseEntry.journalData = journalEntry;
+            encounterDatabaseEntry.path = string.Empty;
+            encounterDatabaseEntry.myGuid = EncounterGUID;
+            if (OverrideShootStyleString != null)
+            {
+                encounterDatabaseEntry.shootStyleInt = OverrideShootStyleString.To2ndTapeDatabase();
+            }
+            if (autoEncounter)
+            {
+                GameStatsManager.Instance.HandleEncounteredObjectRaw(EncounterGUID);
+            }
+            return encounterDatabaseEntry;
+        }
+        public static EncounterDatabaseEntry CreateDummyEncounterDatabaseEntry(int? OverrideShootStyleValue, JournalEntry journalEntry,  string EncounterGUID = null, bool autoEncounter = true)
+        {
+            EncounterGUID = EncounterGUID ?? Guid.NewGuid().ToString();
+            EncounterDatabaseEntry encounterDatabaseEntry = new EncounterDatabaseEntry();
+            encounterDatabaseEntry.journalData = journalEntry;
+            encounterDatabaseEntry.path = string.Empty;
+            encounterDatabaseEntry.myGuid = EncounterGUID;
+            if (OverrideShootStyleValue != null)
+            {
+                encounterDatabaseEntry.shootStyleInt = OverrideShootStyleValue.Value;
+            }
             if (autoEncounter)
             {
                 GameStatsManager.Instance.HandleEncounteredObjectRaw(EncounterGUID);
@@ -77,6 +113,7 @@ namespace AmmonomiconAPI
             return journalEntry;
         }
         private static int _AutoStringCounter = 0;
+        private static int _AutoStringCounter2ndTape = -1;
         private static string ToDatabase(this string s)
         {
             if (s.Length == 0 || s[0] == '#')
@@ -85,6 +122,29 @@ namespace AmmonomiconAPI
             ETGMod.Databases.Strings.Items.AddComplex(key, s);
             return key;
         }
+
+        public static int To2ndTapeDatabase(this string s)
+        {
+            string key = "";
+            if (s.Length == 0)
+            {
+                return -1;
+            }
+            _AutoStringCounter2ndTape--;
+            if (s[0] == '#')
+            {
+                key = s;
+            }
+            else
+            {
+                key = $"#AMMONOMICON_AUTO_DB_STRING_TAPE_{s}";
+                ETGMod.Databases.Strings.Items.AddComplex(key, s);
+            }
+            StaticData.Stored2ndTapeTexts.Add(_AutoStringCounter2ndTape, key);
+            return _AutoStringCounter2ndTape;
+        }
+
+
 
         /// <summary>Convenience method for calling an internal / private static function with an ILCursor</summary>
         internal static void CallPrivate(this ILCursor cursor, Type t, string name)

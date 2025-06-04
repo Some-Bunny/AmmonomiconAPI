@@ -43,8 +43,27 @@ namespace AmmonomiconAPI.Code
                 List<EncounterDatabaseEntry> entries = new List<EncounterDatabaseEntry>();
                 entries.Add(
                     HelperTools.CreateDummyEncounterDatabaseEntry(
-                        HelperTools.CreateJournalEntryData("ExampleEntryName", "YourAmmonomiconSprite", "Tangline", "OOOOOOOOOO thats a lot")));
+                        HelperTools.CreateJournalEntryData("ExampleEntryName", "YourAmmonomiconSprite", "Tagline", "OOOOOOOOOO thats a lot")));
                 /// return a list of entries which will then be filled out and added to your page. You can make custom EncounterDatabaseEntry for whatever you desire using the methods in HelperTools.
+
+                ///if you want to add custom text to the 2nd tape line of your entry, there are 2 methods
+                ///
+                /// First Method: will automatically generate a key without your input for your entry.
+                entries.Add(
+                    HelperTools.CreateDummyEncounterDatabaseEntry("Your Second Tape Line",
+                        HelperTools.CreateJournalEntryData("ExampleEntryName", "YourAmmonomiconSprite", "Tagline", "text text text")));
+
+
+                /// Second Method: Create your own key so you can re-use it for multiple entries without adding duplicate text to the database
+                string my2ndKeyText = "hey this is a 2nd key";
+                int My2ndTapeKey = my2ndKeyText.To2ndTapeDatabase(); 
+
+                /// HelperTools.To2ndTapeDatabase(my2ndKeyText); also works
+
+                entries.Add(
+                    HelperTools.CreateDummyEncounterDatabaseEntry(My2ndTapeKey,
+                        HelperTools.CreateJournalEntryData("ExampleEntryName", "YourAmmonomiconSprite", "Tagline", "text text text")));
+
                 return entries;
             }
             public override bool ShouldBeActive()

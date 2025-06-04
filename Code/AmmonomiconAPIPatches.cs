@@ -21,7 +21,22 @@ namespace AmmonomiconAPI
     class AmmonomiconAPIPatches
     {
 
+        [HarmonyPatch(typeof(EncounterDatabaseEntry), nameof(EncounterDatabaseEntry.GetSecondTapeDescriptor))]
+        public class Patch_GetSecondTapeDescriptor_Class
+        {
+            [HarmonyPrefix]
+            private static bool GetSecondTapeDescriptor(EncounterDatabaseEntry __instance, ref string __result)
+            {
+                //CustomActions.OnAmmonomiconPrecache?.Invoke(__instance, __instance.m_AmmonomiconInstance);
+                if (StaticData.Stored2ndTapeTexts.ContainsKey(__instance.shootStyleInt))
+                {
+                    __result = StringTableManager.GetItemsString(StaticData.Stored2ndTapeTexts[__instance.shootStyleInt], -1);
+                    return false;
+                }
 
+                return true;
+            }
+        }
 
         [HarmonyPatch(typeof(AmmonomiconController), nameof(AmmonomiconController.PrecacheAllData))]
         public class Patch_PrecacheAllData_Class

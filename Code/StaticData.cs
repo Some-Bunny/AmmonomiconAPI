@@ -180,5 +180,8 @@ namespace AmmonomiconAPI
 
         //public static Dictionary<string, AmmonomiconPageRenderer> customPages = new Dictionary<string, AmmonomiconPageRenderer>();
         //public static Dictionary<AmmonomiconPageRenderer, AmmonomiconPageTag> customTags = new Dictionary<AmmonomiconPageRenderer, AmmonomiconPageTag>();
+
+
+        internal static Dictionary<int, string> Stored2ndTapeTexts = new Dictionary<int, string>();
     }
 }
